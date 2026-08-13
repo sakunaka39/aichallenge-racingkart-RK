@@ -8,6 +8,7 @@
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_io/Io.h>
 #include <lanelet2_projection/UTM.h>
+#include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
@@ -49,7 +50,7 @@ private:
   bool initLaneletMap(const std::string &map_path) {
     if (map_path.empty())
       return false;
-    lanelet::projection::UtmProjector projector(lanelet::GPSPoint{0.0, 0.0});
+    lanelet::projection::UtmProjector projector(lanelet::Origin(lanelet::GPSPoint{0.0, 0.0}));
     lanelet_map_ = lanelet::load(map_path, projector);
 
     lanelet::traffic_rules::TrafficRulesPtr traffic_rules =

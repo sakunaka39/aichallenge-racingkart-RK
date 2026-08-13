@@ -16,7 +16,7 @@ find_package(lanelet2_projection REQUIRED)
 find_package(lanelet2_routing REQUIRED)
 find_package(lanelet2_traffic_rules REQUIRED)
 
-add_executable(dynamic_trajectory_generator_node src/dynamic_trajectory_generator_node.cpp)
+add_executable(dynamic_trajectory_generator_node src/dynamic_trajectory_generator.cpp)
 
 ament_target_dependencies(dynamic_trajectory_generator_node
   rclcpp

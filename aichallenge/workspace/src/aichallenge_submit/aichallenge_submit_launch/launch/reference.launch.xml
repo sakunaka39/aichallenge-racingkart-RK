@@ -127,7 +127,7 @@
     <group>
       <push-ros-namespace namespace="scenario_planning"/>
 
-      <!-- Trajectory Generator (Dynamic) -->
+      <!-- Generator Trajectory (Dynamic) -->
       <node pkg="dynamic_trajectory_generator" exec="dynamic_trajectory_generator_node" name="dynamic_trajectory_generator_node" output="screen">
         <param name="map_path" value="$(find-pkg-share aichallenge_submit_launch)/map/lanelet2_map.osm"/>
       </node>
