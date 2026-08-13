@@ -127,10 +127,9 @@
     <group>
       <push-ros-namespace namespace="scenario_planning"/>
 
-      <!-- Customizable -->
-      <node pkg="simple_trajectory_generator" exec="simple_trajectory_generator_node" name="simple_trajectory_generator" output="screen">
-            <param name="csv_path" value="$(find-pkg-share simple_trajectory_generator)/data/$(var track_subdir)raceline_awsim_30km_from_garage.csv"/>
-            <param name="z" value="6.5"/>
+      <!-- Trajectory Generator (Dynamic) -->
+      <node pkg="dynamic_trajectory_generator" exec="dynamic_trajectory_generator_node" name="dynamic_trajectory_generator_node" output="screen">
+        <param name="map_path" value="$(find-pkg-share aichallenge_submit_launch)/map/lanelet2_map.osm"/>
       </node>
       
     </group>
