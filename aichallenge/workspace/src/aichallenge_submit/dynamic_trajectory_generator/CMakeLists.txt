@@ -13,6 +13,7 @@ find_package(tf2_ros REQUIRED)
 find_package(lanelet2_core REQUIRED)
 find_package(lanelet2_io REQUIRED)
 find_package(lanelet2_projection REQUIRED)
+find_package(lanelet2_extension REQUIRED)
 find_package(lanelet2_routing REQUIRED)
 find_package(lanelet2_traffic_rules REQUIRED)
 
@@ -26,6 +27,7 @@ ament_target_dependencies(dynamic_trajectory_generator_node
   lanelet2_core
   lanelet2_io
   lanelet2_projection
+  lanelet2_extension
   lanelet2_routing
   lanelet2_traffic_rules
 )

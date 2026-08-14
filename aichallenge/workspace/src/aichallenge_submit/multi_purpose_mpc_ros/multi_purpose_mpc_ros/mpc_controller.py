@@ -678,8 +678,7 @@ class MPCController(Node):
         self._wait_until_message_received(lambda: self._odom, 'odometry', timeout)
 
     def _wait_until_trajectory_received(self, timeout: float = 30.) -> None:
-        if self._cfg.reference_path.update_by_topic:
-            self._wait_until_message_received(lambda: self._trajectory, 'trajectory', timeout)
+        pass
 
     def _wait_until_path_constraints_received(self, timeout: float = 30.) -> None:
         if self.USE_OBSTACLE_AVOIDANCE and self._cfg.reference_path.use_path_constraints_topic: # type: ignore
@@ -768,11 +767,15 @@ class MPCController(Node):
 
         if self._loop % 100 == 0:
             # update reference path
-            if self._cfg.reference_path.update_by_topic: # type: ignore
+            if self._cfg.reference_path.update_by_topic and self._trajectory is not None: # type: ignore
                 new_referece_path = self._create_reference_path_from_autoware_trajectory(self._trajectory)
                 if new_referece_path is not None:
                     self._car.reference_path = new_referece_path
                     self._car.update_reference_path(self._car.reference_path)
+                    if not self._mpc.use_obstacle_avoidance:
+                        self._car.reference_path.update_simple_path_constraints(
+                            self._mpc.N,
+                            self._car.safety_margin)
 
             def plot_reference_path(car):
                 import matplotlib.pyplot as plt
@@ -803,8 +806,17 @@ class MPCController(Node):
         # print(f"car x: {self._car.temporal_state.x}, y: {self._car.temporal_state.y}, psi: {self._car.temporal_state.psi}")
         # print(f"mpc x: {self._mpc.model.temporal_state.x}, y: {self._mpc.model.temporal_state.y}, psi: {self._mpc.model.temporal_state.psi}")
 
+        arrived_at_goal = False
+        if not self._cfg.reference_path.circular:
+            if self._car.reference_path.n_waypoints - self._car.wp_id <= 5:
+                arrived_at_goal = True
+
         with self._stats.time_block("control"):
-            u, max_delta = self._mpc.get_control()
+            if arrived_at_goal:
+                u = [0.0, 0.0]
+                max_delta = 0.0
+            else:
+                u, max_delta = self._mpc.get_control()
             # self.get_logger().info(f"u: {u}")
 
         if self._ref_vel_configulator is not None:
@@ -850,9 +862,12 @@ class MPCController(Node):
                 acc = 500.0
                 self._pred_marker_color = CYAN
         else:
-            acc =  self.KP * (u[0] - v)
-            # print(f"v: {v}, u[0]: {u[0]}, acc: {acc}")
-            acc = np.clip(acc, self._mpc_cfg.a_min, self._mpc_cfg.a_max)
+            if arrived_at_goal:
+                acc = self._mpc_cfg.a_min
+            else:
+                acc =  self.KP * (u[0] - v)
+                # print(f"v: {v}, u[0]: {u[0]}, acc: {acc}")
+                acc = np.clip(acc, self._mpc_cfg.a_min, self._mpc_cfg.a_max)
         # u[0] = np.clip(last_u[0] + acc * dt, 0.0, self._mpc_cfg.v_max)
 
         # apply low pass filter to control signal
@@ -886,7 +901,17 @@ class MPCController(Node):
         # initialize car states
         pose = odom_to_pose_2d(self._odom) # type: ignore
         self._car.update_states(pose.x, pose.y, pose.theta)
-        self._car.update_reference_path(self._car.reference_path)
+        if self._cfg.reference_path.update_by_topic and self._trajectory is not None:
+            new_referece_path = self._create_reference_path_from_autoware_trajectory(self._trajectory)
+            if new_referece_path is not None:
+                self._car.reference_path = new_referece_path
+                self._car.update_reference_path(self._car.reference_path)
+                if not self._mpc.use_obstacle_avoidance:
+                    self._car.reference_path.update_simple_path_constraints(
+                        self._mpc.N,
+                        self._car.safety_margin)
+        else:
+            self._car.update_reference_path(self._car.reference_path)
 
         if self._ref_vel_configulator is None:
             self._publish_ref_path_marker(self._car.reference_path)

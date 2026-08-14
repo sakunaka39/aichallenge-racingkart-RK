@@ -20,14 +20,14 @@ obstacles:
   radius: 1.25
 
 reference_path:
-  update_by_topic: false # When true, 'circle' must be false
+  update_by_topic: true # When true, 'circle' must be false
   # path from pkg share dir
   # csv_path: ""
   csv_path: "env/final_ver3/traj_mincurv.csv"
   resolution: 0.6
   smoothing_distance: 2
   max_width: 6.0
-  circular: true
+  circular: false
   use_path_constraints_topic: false
   use_border_cells_topic: false
   # use_path_constraints_topic: true

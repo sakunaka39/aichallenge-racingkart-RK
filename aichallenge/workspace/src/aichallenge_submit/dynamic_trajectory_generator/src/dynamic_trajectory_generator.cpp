@@ -7,7 +7,7 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_io/Io.h>
-#include <lanelet2_projection/UTM.h>
+#include <lanelet2_extension/projection/mgrs_projector.hpp>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
@@ -50,7 +50,7 @@ private:
   bool initLaneletMap(const std::string &map_path) {
     if (map_path.empty())
       return false;
-    lanelet::projection::UtmProjector projector(lanelet::Origin(lanelet::GPSPoint{0.0, 0.0}));
+    lanelet::projection::MGRSProjector projector;
     lanelet_map_ = lanelet::load(map_path, projector);
 
     lanelet::traffic_rules::TrafficRulesPtr traffic_rules =
@@ -100,7 +100,7 @@ private:
     }
 
     lanelet::routing::LaneletPath shortest_path = route->shortestPath();
-    auto centerline_poses = extractAndResampleCenterline(shortest_path);
+    auto centerline_poses = extractAndResampleCenterline(shortest_path, goal_pt);
 
     cached_trajectory_.points.clear();
     cached_trajectory_.header.frame_id = "map";
@@ -129,7 +129,7 @@ private:
   }
 
   std::vector<geometry_msgs::msg::Pose>
-  extractAndResampleCenterline(const lanelet::routing::LaneletPath &path) {
+  extractAndResampleCenterline(const lanelet::routing::LaneletPath &path, const lanelet::BasicPoint2d &goal_pt) {
     std::vector<lanelet::BasicPoint2d> raw_centerline;
     for (const auto &ll : path) {
       auto cl = ll.centerline2d();
@@ -168,6 +168,24 @@ private:
         resampled_poses.push_back(p);
       }
     }
+    // ユーザー指定のgoal_ptに最も近いインデックスを見つける
+    size_t closest_idx = 0;
+    double min_dist_sq = std::numeric_limits<double>::max();
+    for (size_t i = 0; i < resampled_poses.size(); ++i) {
+      double dx = resampled_poses[i].position.x - goal_pt.x();
+      double dy = resampled_poses[i].position.y - goal_pt.y();
+      double dist_sq = dx * dx + dy * dy;
+      if (dist_sq < min_dist_sq) {
+        min_dist_sq = dist_sq;
+        closest_idx = i;
+      }
+    }
+
+    // 最寄り点以降を切り捨てる
+    if (closest_idx < resampled_poses.size()) {
+      resampled_poses.resize(closest_idx + 1);
+    }
+
     return resampled_poses;
   }
 

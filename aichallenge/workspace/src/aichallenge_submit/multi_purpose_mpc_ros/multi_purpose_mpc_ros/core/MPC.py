@@ -136,7 +136,8 @@ class MPC:
 
             # Constrain maximum speed based on curvature
             if self.use_max_kappa_pred:
-                max_kappa_pred = np.max(np.abs(kappa_pred[n:]))
+                target_kappa = kappa_pred[n:]
+                max_kappa_pred = np.max(np.abs(target_kappa)) if len(target_kappa) > 0 else 0.0
                 vmax_dyn = np.sqrt(self.ay_max / (np.abs(max_kappa_pred) + 1e-12))
             else:
                 vmax_dyn = np.sqrt(self.ay_max / (np.abs(kappa_pred[n]) + 1e-12))
@@ -166,9 +167,9 @@ class MPC:
 
         # Update dynamic state constraints
         xmin_dyn[0] = xmax_dyn[0] = self.model.spatial_state.e_y
-        xmin_dyn[self.nx::self.nx] = lb
-        xmax_dyn[self.nx::self.nx] = ub
-        xr[self.nx::self.nx] = (lb + ub) / 2
+        xmin_dyn[self.nx::self.nx] = lb[:N]
+        xmax_dyn[self.nx::self.nx] = ub[:N]
+        xr[self.nx::self.nx] = (lb[:N] + ub[:N]) / 2
 
         # Get equality matrix
         Ax = sparse.kron(sparse.eye(N + 1), -sparse.eye(self.nx)) + sparse.csc_matrix(A)
@@ -280,7 +281,11 @@ class MPC:
             self.previous_steering = delta
 
             # 予測の更新
-            self.current_control = control_signals
+            if len(control_signals) < self.nu * self.N:
+                padding = np.zeros(self.nu * self.N - len(control_signals))
+                self.current_control = np.append(control_signals, padding)
+            else:
+                self.current_control = control_signals
             x = np.reshape(dec.x[:(N+1)*nx], (N+1, nx))
             self.current_prediction = self.update_prediction(x, N)
 
