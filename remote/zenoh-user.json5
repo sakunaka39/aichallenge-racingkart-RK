@@ -55,7 +55,8 @@
       allow: {
         publishers: [
           "/initialpose",
-          "/racing_kart/joy"
+          "/racing_kart/joy",
+          "/goal_pose"
         ],
         subscribers: [
           "/control/command/control_cmd",
@@ -104,6 +105,7 @@
       pub_priorities: [
         "/racing_kart/joy=1:express",
         "/initialpose=1:express",
+        "/goal_pose=1:express",
       ],
 
       ////

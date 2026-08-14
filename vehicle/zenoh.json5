@@ -65,7 +65,8 @@
         ],
         subscribers: [
           "/racing_kart/joy",
-          "/initialpose"
+          "/initialpose",
+          "/goal_pose"
         ],
         service_servers: [],
         service_clients: [],
